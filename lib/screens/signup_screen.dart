@@ -1,109 +1,197 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mediverse/screens/profile_update_screen.dart' show ProfileUpdateScreen;
+import 'package:mediverse/services/api_service.dart' show ApiService;
 
-class SignUpScreen extends StatelessWidget {
-  const SignUpScreen({super.key});
+class SignUpPage extends StatefulWidget {
+  const SignUpPage({super.key});
+
+  @override
+  State<SignUpPage> createState() => _SignUpPageState();
+}
+
+class _SignUpPageState extends State<SignUpPage> {
+  final fullnameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool remember = false;
+  bool showPassword = false;
 
   @override
   Widget build(BuildContext context) {
-    final emailController = TextEditingController();
-    final nameController = TextEditingController();
-    final passwordController = TextEditingController();
+    const primaryColor = Color(0xFF1A2E45);
 
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: ListView(
           children: [
-            // Image or illustration
-            Image.asset('assets/images/sign_up.svg', height: 200),
+            const SizedBox(height: 80),
+            SvgPicture.asset('assets/images/sign_up.svg', height: 180),
+            const SizedBox(height: 40),
 
-            const SizedBox(height: 32),
-
-            // Email field
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email),
-                border: OutlineInputBorder(),
+            const Text(
+              'Register',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: primaryColor,
               ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Please register to login.',
+              style: TextStyle(color: Colors.grey),
+            ),
+
+            const SizedBox(height: 24),
+            _buildInput('Fullname', controller: fullnameController),
+            const SizedBox(height: 16),
+            _buildInput('Email', controller: emailController),
+            const SizedBox(height: 16),
+            _buildPasswordInput(),
+
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Checkbox(
+                  value: remember,
+                  onChanged: (value) => setState(() => remember = value!),
+                ),
+                const Text('Remember me next time'),
+              ],
             ),
 
             const SizedBox(height: 16),
-
-            // Full name field
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Full Name',
-                prefixIcon: Icon(Icons.person),
-                border: OutlineInputBorder(),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                minimumSize: const Size.fromHeight(50),
               ),
-            ),
+              onPressed: () async {
+                final result = await ApiService.signup(
+                  fullname: fullnameController.text.trim(),
+                  email: emailController.text.trim(),
+                  password: passwordController.text.trim(),
+                );
 
+                if (result['success']) {
+                  final user = result['data']['user'];
+                  final userId = user['id']; // 👈 this is from backend
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProfileUpdateScreen(userId: userId),
+                    ),
+                  );
+                } else {
+                  if (result['message'].toLowerCase().contains(
+                    'email already',
+                  )) {
+                    showEmailExistsDialog(context);
+                  } else {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(result['message'])));
+                  }
+                }
+              },
+
+              child: const Text('Sign Up'),
+            ),
             const SizedBox(height: 16),
 
-            // Password field
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                prefixIcon: Icon(Icons.lock),
-                border: OutlineInputBorder(),
-                suffixIcon: Icon(Icons.visibility_off),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Terms text
-            const Text.rich(
-              TextSpan(
-                text: "You're agree to our ",
-                children: [
-                  TextSpan(
-                    text: 'Terms & Conditions',
-                    style: TextStyle(decoration: TextDecoration.underline),
-                  ),
-                  TextSpan(text: ' and '),
-                  TextSpan(
-                    text: 'Privacy Policy.',
-                    style: TextStyle(decoration: TextDecoration.underline),
-                  ),
-                ],
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            const SizedBox(height: 16),
-
-            // Submit button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                child: const Text('Submit'),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Login redirect
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('Joined us before?'),
-                TextButton(
-                  onPressed: () => Navigator.pushNamed(context, '/login'),
-                  child: const Text('Login'),
+                const Text('Already have account? '),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Text(
+                    'Sign In',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
                 ),
               ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInput(
+    String label, {
+    required TextEditingController controller,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        enabledBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Color(0xFFE5E6EC)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPasswordInput() {
+    return TextField(
+      controller: passwordController,
+      obscureText: !showPassword,
+      decoration: InputDecoration(
+        labelText: 'Password',
+        filled: true,
+        fillColor: Colors.white,
+        suffixIcon: IconButton(
+          icon: Icon(showPassword ? Icons.visibility : Icons.visibility_off),
+          onPressed: () => setState(() => showPassword = !showPassword),
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        enabledBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Color(0xFFE5E6EC)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  void showEmailExistsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Email Already Exists'),
+            content: const Text(
+              'This email is already registered. Please log in instead.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context), // Dismiss
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  Navigator.pushReplacementNamed(
+                    context,
+                    '/',
+                  ); // Navigate to login
+                },
+                child: const Text('Go to Login'),
+              ),
+            ],
+          ),
     );
   }
 }
