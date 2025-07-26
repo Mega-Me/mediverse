@@ -8,6 +8,7 @@ class Appointment {
   final Duration duration;
   final String status;
   final String payment;
+  final String roomId; // Add this field
 
   Appointment({
     required this.id,
@@ -19,6 +20,7 @@ class Appointment {
     required this.duration,
     required this.status,
     required this.payment,
+    required this.roomId,
   });
 
   factory Appointment.fromJson(Map<String, dynamic> json) {
@@ -46,6 +48,7 @@ class Appointment {
       duration: Duration(minutes: json['duration'] ?? 0),
       status: json['status'] ?? 'Pending',
       payment: json['payment'] ?? 'Pending',
+      roomId: json['roomId'] ?? 'default_room_${json['_id']}',
     );
   }
 }

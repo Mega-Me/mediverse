@@ -8,7 +8,7 @@ import 'package:mediverse/screens/connection_lost_screen.dart';
 import 'package:mediverse/services/connection_utils.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.1.6:5000/api';
+  static const String baseUrl = 'http://192.168.1.7:5000/api';
   //static const String baseUrl = 'http://10.241.93.81:5000/api';
   //static const String baseUrl = 'http://10.0.0.64:5000/api';
   // static const String baseUrl = 'http://localhost:5000/api';
@@ -171,6 +171,7 @@ class ApiService {
         'doctorId': doctorId,
         'date': date.toIso8601String(),
         'duration': duration,
+        // Backend will generate roomId
       }),
     );
 
@@ -197,11 +198,7 @@ class ApiService {
     }
   }
 
-  static Future<List<Appointment>> fetchAppointmentsForDoctor(
-      String doctorId, {
-        String? filterStatus,
-      }) async {
-    final query = filterStatus != null ? '?status=$filterStatus' : '';
+  static Future<List<Appointment>> fetchAppointmentsForDoctor(String doctorId) async {
     final response = await http.get(Uri.parse('$baseUrl/appointments/doctor/$doctorId'));
     if (response.statusCode == 200) {
       final List list = jsonDecode(response.body);
@@ -210,6 +207,7 @@ class ApiService {
       throw Exception('Failed to load doctor appointments');
     }
   }
+
 
 
 
